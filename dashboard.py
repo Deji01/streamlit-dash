@@ -157,7 +157,7 @@ st.write("Sole Supplier - Top 5 Price Gain")
 
 for i in range(5):
     with columns[i]:
-        st.metric(final_df.iloc[i, 0], df_1.iloc[i, -2], final_df.iloc[i, -1])
+        st.metric(final_df.iloc[i, 0], final_df.iloc[i, -2], final_df.iloc[i, -1])
 
 st.write("Sole Supplier - Top 5 Price Drop")
 
