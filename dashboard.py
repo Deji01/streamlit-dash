@@ -14,6 +14,16 @@ from config import create_connection
 # pandas max column settings
 pd.set_option('display.max_columns', 50)
 
+# -------------- SETTINGS --------------
+page_title = "Nike Dunk Shoe Price Tracker"
+# emojis: https://www.webfx.com/tools/emoji-cheat-sheet/
+page_icon = ":shoe:"  
+layout = "wide"
+# --------------------------------------
+
+st.set_page_config(page_title=page_title, page_icon=page_icon, layout=layout)
+st.title(page_title + "" + page_icon)
+
 # styling
 def style_negative(value, props=""):
     "Styles negative values in  a dataframe"
@@ -29,7 +39,6 @@ def style_positive(value, props=""):
     except:
         pass
 
-st.title("Nike Dunk Shoe Price Tracker")
 
 # create database connection
 connection, _ = create_connection()
@@ -93,13 +102,13 @@ reverse_data = final_data.sort_values(by="pct_change", ascending=True).reset_ind
 col1, col2, col3, col4, col5 = st.columns(5)
 columns = [col1, col2, col3, col4, col5]
 
-st.write("Goat - Top 5 Price Gain")
+# st.write("Goat - Top 5 Price Gain")
 
 for i in range(5):
     with columns[i]:
         st.metric(final_data.iloc[i, 0], final_data.iloc[i, -2], final_data.iloc[i, -1])
 
-st.write("Goat - Top 5 Price Drop")
+# st.write("Goat - Top 5 Price Drop")
 
 for i in range(5):
     with columns[i]:
@@ -153,13 +162,13 @@ reverse_df = final_df.sort_values(by="pct_change", ascending=True).reset_index(d
 col1, col2, col3, col4, col5 = st.columns(5)
 columns = [col1, col2, col3, col4, col5]
 
-st.write("Sole Supplier - Top 5 Price Gain")
+# st.write("Sole Supplier - Top 5 Price Gain")
 
 for i in range(5):
     with columns[i]:
         st.metric(final_df.iloc[i, 0], final_df.iloc[i, -2], final_df.iloc[i, -1])
 
-st.write("Sole Supplier - Top 5 Price Drop")
+# st.write("Sole Supplier - Top 5 Price Drop")
 
 for i in range(5):
     with columns[i]:
