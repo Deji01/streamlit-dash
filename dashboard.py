@@ -116,6 +116,8 @@ for i in range(5):
         st.metric(reverse_data.iloc[i, 0], reverse_data.iloc[i, -2], reverse_data.iloc[i, -1])
 
 st.markdown("### Goat - Top 10 Shoes by Percent Price Change")
+st.markdown(f"`prev_price` : price on `{goat_start_date}`")
+st.markdown(f"`curr_price` : price on `{goat_end_date}`")
 st.dataframe(final_data.head(10).style.hide().applymap(style_negative, props='color:red;').applymap(style_positive, props='color:green;'))
 
 # SOLE SUPPLIER
@@ -175,4 +177,6 @@ for i in range(5):
         st.metric(reverse_df.iloc[i, 0], reverse_df.iloc[i, -2], reverse_df.iloc[i, -1])
 
 st.markdown("### Sole Supplier - Top 10 Shoes by Percent Price Change")
+st.markdown(f"`prev_price` : price on `{sole_start_date}`")
+st.markdown(f"`curr_price` : price on `{sole_end_date}`")
 st.dataframe(final_df.head(10).style.hide().applymap(style_negative, props='color:red;').applymap(style_positive, props='color:green;'))
