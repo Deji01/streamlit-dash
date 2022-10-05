@@ -22,7 +22,7 @@ layout = "wide"
 # --------------------------------------
 
 st.set_page_config(page_title=page_title, page_icon=page_icon, layout=layout)
-st.title(page_title + "" + page_icon)
+st.title(page_title)
 
 # styling
 def style_negative(value, props=""):
@@ -99,22 +99,23 @@ final_data = merge_data[["product_title", "style_code", "prev_price", "curr_pric
 
 reverse_data = final_data.sort_values(by="pct_change", ascending=True).reset_index(drop=True)
 
+st.markdown("### Goat - Top 5 Sneakers Price Gain & Price Drop")
+
 col1, col2, col3, col4, col5 = st.columns(5)
 columns = [col1, col2, col3, col4, col5]
 
-# st.write("Goat - Top 5 Price Gain")
+
 
 for i in range(5):
     with columns[i]:
         st.metric(final_data.iloc[i, 0], final_data.iloc[i, -2], final_data.iloc[i, -1])
 
-# st.write("Goat - Top 5 Price Drop")
 
 for i in range(5):
     with columns[i]:
         st.metric(reverse_data.iloc[i, 0], reverse_data.iloc[i, -2], reverse_data.iloc[i, -1])
 
-st.write("Goat - Top 10 Shoes by Percent Price Change")
+st.markdown("### Goat - Top 10 Shoes by Percent Price Change")
 st.dataframe(final_data.head(10).style.hide().applymap(style_negative, props='color:red;').applymap(style_positive, props='color:green;'))
 
 # SOLE SUPPLIER
@@ -158,21 +159,20 @@ final_df = merge_df[["product_title", "style_code", "prev_price", "curr_price",
                     "pct_change"]].sort_values(by="pct_change", ascending=False).reset_index(drop=True)
 reverse_df = final_df.sort_values(by="pct_change", ascending=True).reset_index(drop=True)
 
+st.markdown("### Sole Supplier - Top 5 Sneakers Price Gain & Price Drop")
 
 col1, col2, col3, col4, col5 = st.columns(5)
 columns = [col1, col2, col3, col4, col5]
 
-# st.write("Sole Supplier - Top 5 Price Gain")
 
 for i in range(5):
     with columns[i]:
         st.metric(final_df.iloc[i, 0], final_df.iloc[i, -2], final_df.iloc[i, -1])
 
-# st.write("Sole Supplier - Top 5 Price Drop")
 
 for i in range(5):
     with columns[i]:
         st.metric(reverse_df.iloc[i, 0], reverse_df.iloc[i, -2], reverse_df.iloc[i, -1])
 
-st.write("Sole Supplier - Top 10 Shoes by Percent Price Change")
+st.markdown("### Sole Supplier - Top 10 Shoes by Percent Price Change")
 st.dataframe(final_df.head(10).style.hide().applymap(style_negative, props='color:red;').applymap(style_positive, props='color:green;'))
