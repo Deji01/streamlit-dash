@@ -1,7 +1,7 @@
 # import libraries
 import streamlit as st
 from streamlit_option_menu import option_menu
-from dashboard import home
+from dashboard import home, search
 
 # -------------- SETTINGS --------------
 page_title = "Nike Dunk Sneakers Price Tracker"
@@ -31,4 +31,4 @@ if selected == "Home":
     home()
 
 if selected == "Search":
-    pass
+    search()

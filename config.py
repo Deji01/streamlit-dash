@@ -12,8 +12,6 @@ db_port = os.environ["DB_PORT"]
 db_user = os.environ["DB_USER"]
 
 
-
-
 def create_connection():
     "Create Database Connection"
 

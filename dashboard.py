@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import pandas.io.sql as psql
+import plotly.express as px
 import streamlit as st
 from config import create_connection
 from datetime import timedelta
@@ -10,11 +11,12 @@ from utils import fillna_mode, style_negative, style_positive
 pd.set_option("display.max_columns", 50)
 pd.options.display.float_format = "${:,.2f}".format
 
+# create database connection
+connection, _ = create_connection()
+
 
 def home():
     unit = "$"
-    # create database connection
-    connection, _ = create_connection()
 
     st.markdown("## Sole Supplier")
     # -------------- SOLE SUPPLIER --------------
@@ -120,7 +122,7 @@ def home():
 
     if "daily_pct" not in list(final_data.columns):
         final_data = final_data.drop(
-        columns=list(final_data.columns)[1:-6], axis=1)
+            columns=list(final_data.columns)[1:-6], axis=1)
         final_data.rename(
             columns={list(final_data.columns)[1]: "price"}, inplace=True)
         final_data = final_data[
@@ -137,7 +139,7 @@ def home():
         ]
     else:
         final_data = final_data.drop(
-        columns=list(final_data.columns)[1:-7], axis=1)
+            columns=list(final_data.columns)[1:-7], axis=1)
         final_data.rename(
             columns={list(final_data.columns)[1]: "price"}, inplace=True)
         final_data = final_data[
@@ -152,7 +154,7 @@ def home():
                 "volatility",
             ]
         ]
-    
+
     final_pct = final_data.sort_values(by="price_change", ascending=False).reset_index(
         drop=True
     )
@@ -374,3 +376,156 @@ def home():
         .applymap(style_negative, props="color:red;")
         .applymap(style_positive, props="color:green;")
     )
+
+
+def search():
+    st.write("All original NIke sneakers have tags attached to them with their sizes, barcodes, and model numbers. The model number of the sneaker is usually located under the size and above the barcode. Most times, it is a 6-digit number / alphabet followed by a 3-digit number / alphabet (e.g. DJ0950-113).  You can also find it in the description on retail sites or on the box.")
+    with st.form("sneaker_form", clear_on_submit=True):
+
+        stores = ["Sole Supplier", "Goat"]
+        user_input = st.text_input(
+            label="Model Number",
+            max_chars=30,
+            key="unique_code",
+            placeholder="Enter your model number here ...",
+        )
+        stores = st.selectbox("Choose a retail store", stores)
+        submitted = st.form_submit_button("Submit")
+        style_code = st.session_state["unique_code"].upper()
+
+        if submitted & (len(style_code) > 0):
+            st.success("valid input")
+
+            # data validation
+            if (
+                isinstance(user_input, str)
+                & ("-" in style_code)
+                & (10 >= len(style_code) < 30)
+            ):
+                if stores == "Sole Supplier":
+                    # read in data from database
+                    query = f'''
+                                SELECT 
+                                    "date",
+                                    product_title,
+                                    round(price,2) AS price,
+                                    image_url
+                                FROM sole_supplier
+                                WHERE style_code={style_code}
+                            '''
+                    df = psql.read_sql(query, connection)
+                    if (df.shape[0]) > 0:
+                        df["date"] = pd.to_datetime(df["date"])
+                        df["date"] = df["date"].dt.date
+                        df["price"] = df["price"].round(2)
+                        title = df["product_title"].unique()[0]
+                        img = df["image_url"].unique()[0]
+                        data = df.sort_values(
+                            by="date", ascending=False).copy()
+                        st.markdown(f"![{style_code} {title}]({img})")
+                        frame = data.describe().T
+                        frame["initial"] = list(data["price"])[0]
+                        frame["current"] = list(data["price"])[-1]
+                        frame["change"] = list(
+                            data["price"])[-1] - list(data["price"])[0]
+                        frame.rename(
+                            columns={
+                                "mean": "average",
+                                "std": "standard deviation",
+                                "max": "maximum",
+                                "min": "minimum",
+                            },
+                            inplace=True,
+                        )
+                        st.markdown("### Summary Statistics")
+                        st.dataframe(
+                            frame.style.hide()
+                            .applymap(style_negative, props="color:red;")
+                            .applymap(style_positive, props="color:green;")
+                        )
+                        data = data[["date", "price"]]
+                        data = data.set_index("date")
+                        fig = px.line(
+                            data,
+                            y="price",
+                            line_shape="spline",
+                            render_mode="svg",
+                            color_discrete_sequence=px.colors.qualitative.G10,
+                        )
+                        fig.update_layout(
+                            title_text=f"{title} Price Change Over Time")
+                        fig.update_layout(
+                            {"plot_bgcolor": "rgba(106, 245, 39, 0.96)"})
+                        fig.update_traces(
+                            line={"color": "Black", "width": 2.5})
+                        fig.update_xaxes(
+                            minor=dict(ticks="inside", showgrid=True),
+                            rangeslider_visible=True,
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+                    else:
+                        st.markdown(f"### {style_code} not found in database")
+                elif stores == "Goat":
+                    st.write("Goat")
+                    # read in data from database
+                    query = f'''
+                                SELECT 
+                                    "date",
+                                    product_title,
+                                    round((retail_price_cents/100),2) AS price,
+                                    image_url
+                                FROM goat
+                                WHERE REPLACE(sku, '', '-')={style_code}
+                            '''
+                    df = psql.read_sql(query, connection)
+                    if (df.shape[0]) > 0:
+                        df["date"] = pd.to_datetime(df["date"])
+                        df["date"] = df["date"].dt.date
+                        df["price"] = df["price"].round(2)
+                        title = df["product_title"].unique()[0]
+                        img = df["image_url"].unique()[0]
+                        data = df.sort_values(
+                            by="date", ascending=False).copy()
+                        st.markdown(f"![{style_code} {title}]({img})")
+                        frame = data.describe().T
+                        frame["initial"] = list(data["price"])[0]
+                        frame["current"] = list(data["price"])[-1]
+                        frame["change"] = list(
+                            data["price"])[-1] - list(data["price"])[0]
+                        frame.rename(
+                            columns={
+                                "mean": "average",
+                                "std": "standard deviation",
+                                "max": "maximum",
+                                "min": "minimum",
+                            },
+                            inplace=True,
+                        )
+                        st.markdown("### Summary Statistics")
+                        st.dataframe(
+                            frame.style.hide()
+                            .applymap(style_negative, props="color:red;")
+                            .applymap(style_positive, props="color:green;")
+                        )
+                        data = data[["date", "price"]]
+                        data = data.set_index("date")
+                        fig = px.line(
+                            data,
+                            y="price",
+                            line_shape="spline",
+                            render_mode="svg",
+                            color_discrete_sequence=px.colors.qualitative.G10,
+                        )
+                        fig.update_layout(
+                            title_text=f"{title} Price Change Over Time")
+                        fig.update_layout(
+                            {"plot_bgcolor": "rgba(106, 245, 39, 0.96)"})
+                        fig.update_traces(
+                            line={"color": "Black", "width": 2.5})
+                        fig.update_xaxes(
+                            minor=dict(ticks="inside", showgrid=True),
+                            rangeslider_visible=True,
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+                    else:
+                        st.markdown(f"### {style_code} not found in database")
