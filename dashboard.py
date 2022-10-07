@@ -123,6 +123,8 @@ def home():
             columns=list(final_data.columns)[1:-7], axis=1)
         final_data.rename(
             columns={list(final_data.columns)[1]: "price"}, inplace=True)
+        print(final_data.head())
+
         final_data = final_data[
             [
                 "product_title",
@@ -140,6 +142,8 @@ def home():
             columns=list(final_data.columns)[1:-5], axis=1)
         final_data.rename(
             columns={list(final_data.columns)[1]: "price"}, inplace=True)
+        print(final_data.head())
+        
         final_data = final_data[
             [
                 "product_title",
