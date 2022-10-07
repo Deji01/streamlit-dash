@@ -11,15 +11,15 @@ from utils import fillna_mode, style_negative, style_positive
 pd.set_option("display.max_columns", 50)
 pd.options.display.float_format = "${:,.2f}".format
 
-# create database connection
-connection, _ = create_connection()
-
 
 def home():
     unit = "$"
 
     st.markdown("## Sole Supplier")
     # -------------- SOLE SUPPLIER --------------
+
+    # create database connection
+    connection, _ = create_connection()
 
     # read in data from database
     query = """
@@ -402,6 +402,9 @@ def search():
                 & ("-" in style_code)
                 & (10 >= len(style_code) < 30)
             ):
+                # create database connection
+                connection, _ = create_connection()
+
                 if stores == "Sole Supplier":
                     # read in data from database
                     query = f'''
