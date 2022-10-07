@@ -117,22 +117,41 @@ def home():
     final_data.columns.name = ""
     final_data["product_title"] = final_data["style_code"].map(
         dict(sole_product_lst))
-    final_data = final_data.drop(
-        columns=list(final_data.columns)[1:-7], axis=1)
-    final_data.rename(
-        columns={list(final_data.columns)[1]: "price"}, inplace=True)
-    final_data = final_data[
-        [
-            "product_title",
-            "style_code",
-            "price",
-            "price_change",
-            "daily_pct",
-            "weekly_pct",
-            "total_pct",
-            "volatility",
+
+    try:
+        final_data = final_data.drop(
+            columns=list(final_data.columns)[1:-7], axis=1)
+        final_data.rename(
+            columns={list(final_data.columns)[1]: "price"}, inplace=True)
+        final_data = final_data[
+            [
+                "product_title",
+                "style_code",
+                "price",
+                "price_change",
+                "daily_pct",
+                "weekly_pct",
+                "total_pct",
+                "volatility",
+            ]
         ]
-    ]
+    except:
+        final_data = final_data.drop(
+            columns=list(final_data.columns)[1:-5], axis=1)
+        final_data.rename(
+            columns={list(final_data.columns)[1]: "price"}, inplace=True)
+        final_data = final_data[
+            [
+                "product_title",
+                "style_code",
+                "price",
+                "price_change",
+                # "daily_pct",
+                # "weekly_pct",
+                "total_pct",
+                "volatility",
+            ]
+        ]
 
     final_pct = final_data.sort_values(by="price_change", ascending=False).reset_index(
         drop=True
