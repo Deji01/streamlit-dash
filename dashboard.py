@@ -33,6 +33,9 @@ def home():
             """
     sole_supplier = psql.read_sql(query, connection)
 
+    # close connection
+    connection.close()
+
     # data cleaning & transformation
     sole = sole_supplier.copy()
     sole["date"] = pd.to_datetime(sole["date"])
@@ -211,6 +214,8 @@ def home():
 
     st.markdown("## Goat")
     # -------------- GOAT --------------
+    # create database connection
+    connection, _ = create_connection()
 
     query = """
                     SELECT 
@@ -221,6 +226,9 @@ def home():
                     FROM goat;
                 """
     goat_frame = psql.read_sql(query, connection)
+
+    # close connection
+    connection.close()
 
     # read in data from database
     # filter out only shoe(s) with price(s) greater than 0
@@ -417,6 +425,10 @@ def search():
                                 WHERE style_code='{style_code}'
                             '''
                     df = psql.read_sql(query, connection)
+
+                    # close connection
+                    connection.close()
+
                     if (df.shape[0]) > 0:
                         df["date"] = pd.to_datetime(df["date"])
                         df["date"] = df["date"].dt.date
@@ -481,6 +493,10 @@ def search():
                                 WHERE REPLACE(sku, '', '-')='{style_code}'
                             '''
                     df = psql.read_sql(query, connection)
+
+                    # close connection
+                    connection.close()
+
                     if (df.shape[0]) > 0:
                         df["date"] = pd.to_datetime(df["date"])
                         df["date"] = df["date"].dt.date
