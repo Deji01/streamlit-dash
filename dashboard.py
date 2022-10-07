@@ -146,7 +146,7 @@ def home():
                 "style_code",
                 "price",
                 "price_change",
-                # "daily_pct",
+                "daily_pct",
                 "weekly_pct",
                 "total_pct",
                 "volatility",
