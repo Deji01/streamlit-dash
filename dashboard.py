@@ -411,10 +411,10 @@ def search():
                                 SELECT 
                                     "date",
                                     product_title,
-                                    round(price,2) AS price,
+                                    price,
                                     image_url
                                 FROM sole_supplier
-                                WHERE style_code={style_code}
+                                WHERE style_code='{style_code}'
                             '''
                     df = psql.read_sql(query, connection)
                     if (df.shape[0]) > 0:
@@ -475,10 +475,10 @@ def search():
                                 SELECT 
                                     "date",
                                     product_title,
-                                    round((retail_price_cents/100),2) AS price,
+                                    (retail_price_cents/100) AS price,
                                     image_url
                                 FROM goat
-                                WHERE REPLACE(sku, '', '-')={style_code}
+                                WHERE REPLACE(sku, '', '-')='{style_code}'
                             '''
                     df = psql.read_sql(query, connection)
                     if (df.shape[0]) > 0:
