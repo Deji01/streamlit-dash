@@ -62,6 +62,7 @@ six==1.16.0
 smmap==5.0.0
 stack-data==0.5.1
 streamlit==1.13.0
+streamlit-option-menu==0.3.2
 tenacity==8.1.0
 toml==0.10.2
 toolz==0.12.0

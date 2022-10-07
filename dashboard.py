@@ -1,182 +1,357 @@
-# import libraries
-
+import numpy as np
 import pandas as pd
 import pandas.io.sql as psql
-import plotly.express as px
 import streamlit as st
-
 from config import create_connection
-
-# from datetime import datetime
-# from scipy.ndimage.filters import gaussian_filter1d
-
+from datetime import timedelta
+from utils import fillna_mode, style_negative, style_positive
 
 # pandas max column settings
-pd.set_option('display.max_columns', 50)
-
-# -------------- SETTINGS --------------
-page_title = "Nike Dunk Shoe Price Tracker"
-# emojis: https://www.webfx.com/tools/emoji-cheat-sheet/
-page_icon = ":shoe:"  
-layout = "wide"
-# --------------------------------------
-
-st.set_page_config(page_title=page_title, page_icon=page_icon, layout=layout)
-st.title(page_title)
-
-# styling
-def style_negative(value, props=""):
-    "Styles negative values in  a dataframe"
-    try:
-        return props if value < 0 else None
-    except:
-        pass
-
-def style_positive(value, props=""):
-    "Styles positive values in  a dataframe"
-    try:
-        return props if value > 0 else None
-    except:
-        pass
+pd.set_option("display.max_columns", 50)
+pd.options.display.float_format = "${:,.2f}".format
 
 
-# create database connection
-connection, _ = create_connection()
+def home():
+    unit = "$"
+    # create database connection
+    connection, _ = create_connection()
 
-# GOAT
-query = """
+    st.markdown("## Sole Supplier")
+    # -------------- SOLE SUPPLIER --------------
+
+    # read in data from database
+    query = """
                 SELECT 
-                    "date", 
-                    sku AS style_code, 
-                    value AS product_title, 
-                    retail_price_cents, 
-                    image_url 
-                FROM goat;
+                    "date",
+                    style_code,
+                    product_title,
+                    price,
+                    image_url
+                FROM sole_supplier
             """
-goat_frame = psql.read_sql(query, connection)
+    sole_supplier = psql.read_sql(query, connection)
 
+    # data cleaning & transformation
+    sole = sole_supplier.copy()
+    sole["date"] = pd.to_datetime(sole["date"])
+    sole["date"] = sole["date"].dt.date
 
-# read in data from database
-# filter out only shoe(s) with price(s) greater than 0
-goat = goat_frame.query("retail_price_cents > 0")
+    sole_start_date = sole.date.min()
+    sole_end_date = sole.date.max()
 
-# convert cents to USD
-goat["retail_price_cents"] = goat.retail_price_cents / 100
-goat.rename(columns={"retail_price_cents": "price"}, inplace=True)
+    # data analysis
+    sole_df = sole.copy()
+    sole_df = sole_df.sort_values(by=["style_code", "date"])
 
+    sole_product_lst = list(
+        set(zip(sole_df["style_code"].values, sole_df["product_title"].values))
+    )
 
-# data cleaning & transformation
-goat["style_code"] = goat["style_code"].str.replace(" ", "-")
-goat["date"] = goat["date"].dt.date
+    sole_df = sole_df.groupby(["style_code", "date"])[
+        "price"].mean().reset_index()
+    sole_df = sole_df.pivot_table("style_code", "date", "style_code")
+    sole_df = sole_df.T
 
-goat_df = goat.copy()
-goat_df = goat_df.sort_values(by=["style_code", "date"])
+    sole_data = fillna_mode(sole_df)
 
-goat_start_date = goat_df.date.min()
-goat_end_date = goat_df.date.max()
-goat_df = goat_df[(goat_df.date == goat_start_date)
-                | (goat_df.date == goat_end_date)]
+    num_days = (sole_end_date - sole_start_date).days
 
-product_lst = list(
-    set(zip(goat_df["style_code"].values, goat_df["product_title"].values)))
-goat_data = goat_df.groupby(["style_code", "date"])[
-    "price"].mean().reset_index()
+    sole_data["volatility"] = sole_data.apply(
+        lambda x: (x.std()) / ((365 / num_days) ** 0.5), axis=1
+    )  # volatility = std / (365/T)**0.5
 
-new_data = goat_data[goat_data["date"] ==
-                    goat_end_date][["style_code", "price"]]
-old_data = goat_data[goat_data["date"] ==
-                    goat_start_date][["style_code", "price"]]
-merge_data = pd.merge(old_data, new_data, how="inner", on="style_code")
+    sole_data["price_change"] = sole_data.apply(
+        lambda x: round(
+            ((x[sole_end_date] - x[sole_start_date])),
+            2,
+        ),
+        axis=1,
+    )
+    try:
+        sole_data["daily_pct"] = sole_data.apply(
+            lambda x: round(
+                (
+                    (
+                        (x[sole_end_date] - x[sole_end_date - timedelta(days=1)])
+                        / x[sole_end_date - timedelta(days=1)]
+                    )
+                    * 100
+                ),
+                2,
+            ),
+            axis=1,
+        )
+    except:
+        pass
 
-merge_data.rename(columns={"price_x": "prev_price",
-                "price_y": "curr_price"}, inplace=True)
-merge_data["pct_change"] = round(
-    ((merge_data["curr_price"] - merge_data["prev_price"]) / merge_data["prev_price"]) * 100, 2)
-merge_data["product_title"] = merge_data["style_code"].map(dict(product_lst))
+    try:
+        sole_data["weekly_pct"] = sole_data.apply(
+            lambda x: round(
+                (
+                    (
+                        (x[sole_end_date] - x[sole_end_date - timedelta(days=7)])
+                        / x[sole_end_date - timedelta(days=7)]
+                    )
+                    * 100
+                ),
+                2,
+            ),
+            axis=1,
+        )
+    except:
+        pass
 
-final_data = merge_data[["product_title", "style_code", "prev_price", "curr_price",
-                        "pct_change"]].sort_values(by="pct_change", ascending=False).reset_index(drop=True)
+    try:
+        sole_data["total_pct"] = sole_data.apply(
+            lambda x: round(
+                (((x[sole_end_date] - x[sole_start_date]) / x[sole_start_date]) * 100),
+                2,
+            ),
+            axis=1,
+        )
+    except:
+        pass
 
-reverse_data = final_data.sort_values(by="pct_change", ascending=True).reset_index(drop=True)
+    final_data = sole_data.sort_values(
+        by="volatility", ascending=False).reset_index()
+    final_data.columns.name = ""
+    final_data["product_title"] = final_data["style_code"].map(
+        dict(sole_product_lst))
+    final_data = final_data.drop(
+        columns=list(final_data.columns)[1:-7], axis=1)
+    final_data.rename(
+        columns={list(final_data.columns)[1]: "price"}, inplace=True)
+    final_data = final_data[
+        [
+            "product_title",
+            "style_code",
+            "price",
+            "price_change",
+            "daily_pct",
+            "weekly_pct",
+            "total_pct",
+            "volatility",
+        ]
+    ]
 
-st.markdown("### Goat - Top 5 Sneakers Price Gain & Price Drop")
+    final_pct = final_data.sort_values(by="price_change", ascending=False).reset_index(
+        drop=True
+    )
 
-col1, col2, col3, col4, col5 = st.columns(5)
-columns = [col1, col2, col3, col4, col5]
+    reverse_pct = final_data.sort_values(by="price_change", ascending=True).reset_index(
+        drop=True
+    )
 
+    st.markdown("#### Top 5 Sneakers Price Gain & Price Drop")
 
+    col1, col2, col3, col4, col5 = st.columns(5)
+    columns = [col1, col2, col3, col4, col5]
 
-for i in range(5):
-    with columns[i]:
-        st.metric(final_data.iloc[i, 0], final_data.iloc[i, -2], final_data.iloc[i, -1])
+    for i in range(5):
+        with columns[i]:
+            st.metric(
+                final_pct.iloc[i, 0],
+                f"{unit}{final_pct.iloc[i, 2]:,.2f}",
+                f"{final_pct.iloc[i, 3]:,.2f}",
+            )
 
+    for i in range(5):
+        with columns[i]:
+            st.metric(
+                reverse_pct.iloc[i, 0],
+                f"{unit}{reverse_pct.iloc[i, 2]:,.2f}",
+                f"{reverse_pct.iloc[i, 3]:,.2f}",
+            )
 
-for i in range(5):
-    with columns[i]:
-        st.metric(reverse_data.iloc[i, 0], reverse_data.iloc[i, -2], reverse_data.iloc[i, -1])
+    st.markdown("#### Top 10 Most Volatile Nike Dunk Sneakers")
+    st.markdown(
+        "$Volatility$ measures how the price of a sneaker varies from its average price over time. Fluctuation in price is a good indicator of sneakers that are relatively unstable. The sneakers with the highest volatility should be avoided to avert risk."
+    )
+    st.markdown(
+        "- `style_code` represents a  unique identifier for each sneaker.")
+    st.markdown(f"- `price` represents the  price on `{sole_end_date}`.")
+    st.markdown(
+        f"- `price_change` represents the  difference in price from `{sole_start_date}` to `{sole_end_date}`."
+    )
+    st.markdown("- `daily_pct` represents the percentage change in price daily.")
+    st.markdown(
+        "- `weekly_pct` represents the percentage change in price weekly.")
+    st.markdown(
+        f"- `total_pct` represents the percentage change in price from `{sole_start_date}` to `{sole_end_date}`."
+    )
+    st.markdown("- `volatility` represents the rate of fluctuation in price.")
 
-st.markdown("### Goat - Top 10 Shoes by Percent Price Change")
-st.markdown(f"`prev_price` : price on `{goat_start_date}`")
-st.markdown(f"`curr_price` : price on `{goat_end_date}`")
-st.dataframe(final_data.head(10).style.hide().applymap(style_negative, props='color:red;').applymap(style_positive, props='color:green;'))
+    st.dataframe(
+        final_data.head(10)
+        .style.hide()
+        .applymap(style_negative, props="color:red;")
+        .applymap(style_positive, props="color:green;")
+    )
 
-# SOLE SUPPLIER
+    st.markdown("## Goat")
+    # -------------- GOAT --------------
 
-# read in data from database
-query = """
-            SELECT 
-                "date",
-                style_code,
-                product_title,
-                price,
-                image_url
-            FROM sole_supplier
-        """
-sole_supplier = psql.read_sql(query, connection)
+    query = """
+                    SELECT 
+                        "date", 
+                        sku AS style_code, 
+                        value AS product_title, 
+                        retail_price_cents 
+                    FROM goat;
+                """
+    goat_frame = psql.read_sql(query, connection)
 
-# data cleaning & transformation
-sole = sole_supplier.copy()
-sole["date"] = sole["date"].dt.date
-sole = sole.sort_values(by=["style_code", "date"])
+    # read in data from database
+    # filter out only shoe(s) with price(s) greater than 0
+    goat = goat_frame.query("retail_price_cents > 0")
 
-sole_start_date = sole.date.min()
-sole_end_date = sole.date.max()
-sole = sole[(sole.date == sole_start_date) | (sole.date == sole_end_date)]
+    # convert cents to USD
+    goat["retail_price_cents"] = goat.retail_price_cents / 100
+    goat.rename(columns={"retail_price_cents": "price"}, inplace=True)
 
-product_list = list(
-    set(zip(sole["style_code"].values, sole["product_title"].values)))
-sole_df = sole.groupby(["style_code", "date"])["price"].mean().reset_index()
+    # data cleaning & transformation
+    goat["style_code"] = goat["style_code"].str.replace(" ", "-")
+    goat["date"] = pd.to_datetime(goat["date"])
+    goat["date"] = goat["date"].dt.date
 
-new_df = sole_df[sole_df["date"] == sole_end_date][["style_code", "price"]]
-old_df = sole_df[sole_df["date"] == sole_start_date][["style_code", "price"]]
-merge_df = pd.merge(old_df, new_df, how="inner", on="style_code")
+    goat_start_date = goat.date.min()
+    goat_end_date = goat.date.max()
 
-merge_df.rename(columns={"price_x": "prev_price",
-                "price_y": "curr_price"}, inplace=True)
-merge_df["pct_change"] = round(
-    ((merge_df["curr_price"] - merge_df["prev_price"]) / merge_df["prev_price"]) * 100, 2)
-merge_df["product_title"] = merge_df["style_code"].map(dict(product_list))
+    # data analysis
+    goat_df = goat.copy()
+    goat_df = goat_df.sort_values(by=["style_code", "date"])
 
-final_df = merge_df[["product_title", "style_code", "prev_price", "curr_price",
-                    "pct_change"]].sort_values(by="pct_change", ascending=False).reset_index(drop=True)
-reverse_df = final_df.sort_values(by="pct_change", ascending=True).reset_index(drop=True)
+    goat_product_lst = list(
+        set(zip(goat_df["style_code"].values, goat_df["product_title"].values))
+    )
 
-st.markdown("### Sole Supplier - Top 5 Sneakers Price Gain & Price Drop")
+    goat_df = goat_df.groupby(["style_code", "date"])[
+        "price"].mean().reset_index()
+    goat_df = goat_df.pivot_table("style_code", "date", "style_code")
+    goat_df = goat_df.T
 
-col1, col2, col3, col4, col5 = st.columns(5)
-columns = [col1, col2, col3, col4, col5]
+    goat_data = fillna_mode(goat_df)
 
+    num_days = (goat_end_date - goat_start_date).days
 
-for i in range(5):
-    with columns[i]:
-        st.metric(final_df.iloc[i, 0], final_df.iloc[i, -2], final_df.iloc[i, -1])
+    goat_data["volatility"] = goat_data.apply(
+        lambda x: (x.std()) / ((365 / num_days) ** 0.5), axis=1
+    )  # volatility = std / (T)**0.5
 
+    goat_data["price_change"] = goat_data.apply(
+        lambda x: round(
+            ((x[goat_end_date] - x[goat_start_date])),
+            2,
+        ),
+        axis=1,
+    )
 
-for i in range(5):
-    with columns[i]:
-        st.metric(reverse_df.iloc[i, 0], reverse_df.iloc[i, -2], reverse_df.iloc[i, -1])
+    goat_data["daily_pct"] = goat_data.apply(
+        lambda x: round(
+            (
+                (
+                    (x[goat_end_date] - x[goat_end_date - timedelta(days=1)])
+                    / x[goat_end_date - timedelta(days=1)]
+                )
+                * 100
+            ),
+            2,
+        ),
+        axis=1,
+    )
 
-st.markdown("### Sole Supplier - Top 10 Shoes by Percent Price Change")
-st.markdown(f"`prev_price` : price on `{sole_start_date}`")
-st.markdown(f"`curr_price` : price on `{sole_end_date}`")
-st.dataframe(final_df.head(10).style.hide().applymap(style_negative, props='color:red;').applymap(style_positive, props='color:green;'))
+    goat_data["weekly_pct"] = goat_data.apply(
+        lambda x: round(
+            (
+                (
+                    (x[goat_end_date] - x[goat_end_date - timedelta(days=7)])
+                    / x[goat_end_date - timedelta(days=7)]
+                )
+                * 100
+            ),
+            2,
+        ),
+        axis=1,
+    )
+
+    goat_data["total_pct"] = goat_data.apply(
+        lambda x: round(
+            (((x[goat_end_date] - x[goat_start_date]) / x[goat_start_date]) * 100), 2
+        ),
+        axis=1,
+    )
+
+    final_data = goat_data.sort_values(
+        by="volatility", ascending=False).reset_index()
+    final_data.columns.name = ""
+    final_data["product_title"] = final_data["style_code"].map(
+        dict(goat_product_lst))
+    final_data = final_data.drop(
+        columns=list(final_data.columns)[1:-7], axis=1)
+    final_data.rename(
+        columns={list(final_data.columns)[1]: "price"}, inplace=True)
+    final_data = final_data[
+        [
+            "product_title",
+            "style_code",
+            "price",
+            "price_change",
+            "daily_pct",
+            "weekly_pct",
+            "total_pct",
+            "volatility",
+        ]
+    ]
+
+    final_pct = final_data.sort_values(by="price_change", ascending=False).reset_index(
+        drop=True
+    )
+
+    reverse_pct = final_data.sort_values(by="price_change", ascending=True).reset_index(
+        drop=True
+    )
+
+    st.markdown("#### Top 5 Sneakers Price Gain & Price Drop")
+
+    col1, col2, col3, col4, col5 = st.columns(5)
+    columns = [col1, col2, col3, col4, col5]
+
+    for i in range(5):
+        with columns[i]:
+            st.metric(
+                final_pct.iloc[i, 0],
+                f"{unit}{final_pct.iloc[i, 2]:,.2f}",
+                f"{final_pct.iloc[i, 3]:,.2f}",
+            )
+
+    for i in range(5):
+        with columns[i]:
+            st.metric(
+                reverse_pct.iloc[i, 0],
+                f"{unit}{reverse_pct.iloc[i, 2]:,.2f}",
+                f"{reverse_pct.iloc[i, 3]:,.2f}",
+            )
+
+    st.markdown("#### Top 10 Most Volatile Nike Dunk Sneakers")
+    st.markdown(
+        "$Volatility$ measures how the price of a sneaker varies from its average price over time. Fluctuation in price is a good indicator of sneakers that are relatively unstable. The sneakers with the highest volatility should be avoided to avert risk."
+    )
+    st.markdown(
+        "- `style_code` represents a  unique identifier for each sneaker.")
+    st.markdown(f"- `price` represents the  price on `{goat_end_date}`.")
+    st.markdown(
+        f"- `price_change` represents the  difference in price from `{goat_start_date}` to `{goat_end_date}`."
+    )
+    st.markdown("- `daily_pct` represents the percentage change in price daily.")
+    st.markdown(
+        "- `weekly_pct` represents the percentage change in price weekly.")
+    st.markdown(
+        f"- `total_pct` represents the percentage change in price from `{goat_start_date}` to `{goat_end_date}`."
+    )
+    st.markdown("- `volatility` represents the rate of fluctuation in price.")
+    st.dataframe(
+        final_data.head(10)
+        .style.hide()
+        .applymap(style_negative, props="color:red;")
+        .applymap(style_positive, props="color:green;")
+    )
