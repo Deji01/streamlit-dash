@@ -222,7 +222,7 @@ def home():
                         "date", 
                         sku AS style_code, 
                         value AS product_title, 
-                        ROUND(retail_price_cents, retail_price_cents) AS retail_price_cents 
+                        ROUND(retail_price_cents, 2) AS retail_price_cents 
                     FROM goat;
                 """
     goat_frame = psql.read_sql(query, connection)
