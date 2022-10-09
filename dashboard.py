@@ -14,7 +14,8 @@ pd.options.display.float_format = "${:,.2f}".format
 
 def home():
     unit = "$"
-
+    st.write(
+        "The sneaker retail market is a huge market where people invest in buying sneakers and sell them for a considerable profit. There are various strategies used when operating in such a market. The long-term investment strategy involves buying sneakers and holding unto them for a significant period to make a profit. In consignment, you get stores to sell the sneakers for you for a percentage of your profit. The final strategy called quick flip means you sell the sneakers immediately after you buy them for a slight profit. This is common for people who need quick cash or are new to the market. This dashboard helps track the prices of some of these sneakers to help make informed decisions when investing.")
     st.markdown("## Sole Supplier")
     # -------------- SOLE SUPPLIER --------------
 
@@ -176,7 +177,7 @@ def home():
             st.metric(
                 final_pct.iloc[i, 0],
                 f"{unit}{final_pct.iloc[i, 2]:,.2f}",
-                f"{final_pct.iloc[i, 3]:,.2f}",
+                f"{unit}{final_pct.iloc[i, 3]:,.2f}",
             )
 
     for i in range(5):
@@ -184,7 +185,7 @@ def home():
             st.metric(
                 reverse_pct.iloc[i, 0],
                 f"{unit}{reverse_pct.iloc[i, 2]:,.2f}",
-                f"{reverse_pct.iloc[i, 3]:,.2f}",
+                f"{unit}{reverse_pct.iloc[i, 3]:,.2f}",
             )
 
     st.markdown("#### Top 10 Most Volatile Nike Dunk Sneakers")
@@ -350,7 +351,7 @@ def home():
             st.metric(
                 final_pct.iloc[i, 0],
                 f"{unit}{final_pct.iloc[i, 2]:,.2f}",
-                f"{final_pct.iloc[i, 3]:,.2f}",
+                f"{unit}{final_pct.iloc[i, 3]:,.2f}",
             )
 
     for i in range(5):
@@ -358,7 +359,7 @@ def home():
             st.metric(
                 reverse_pct.iloc[i, 0],
                 f"{unit}{reverse_pct.iloc[i, 2]:,.2f}",
-                f"{reverse_pct.iloc[i, 3]:,.2f}",
+                f"{unit}{reverse_pct.iloc[i, 3]:,.2f}",
             )
 
     st.markdown("#### Top 10 Most Volatile Nike Dunk Sneakers")
