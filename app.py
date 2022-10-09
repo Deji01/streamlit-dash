@@ -27,5 +27,5 @@ selected = option_menu(
 if selected == "Home":
     home()
 
-if selected == "Search":
+elif selected == "Search":
     search()

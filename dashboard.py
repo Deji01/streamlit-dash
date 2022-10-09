@@ -177,7 +177,7 @@ def home():
             st.metric(
                 final_pct.iloc[i, 0],
                 f"{unit}{final_pct.iloc[i, 2]:,.2f}",
-                f"{unit}{final_pct.iloc[i, 3]:,.2f}",
+                f"{final_pct.iloc[i, 3]:,.2f}",
             )
 
     for i in range(5):
@@ -185,7 +185,7 @@ def home():
             st.metric(
                 reverse_pct.iloc[i, 0],
                 f"{unit}{reverse_pct.iloc[i, 2]:,.2f}",
-                f"{unit}{reverse_pct.iloc[i, 3]:,.2f}",
+                f"{reverse_pct.iloc[i, 3]:,.2f}",
             )
 
     st.markdown("#### Top 10 Most Volatile Nike Dunk Sneakers")
@@ -351,7 +351,7 @@ def home():
             st.metric(
                 final_pct.iloc[i, 0],
                 f"{unit}{final_pct.iloc[i, 2]:,.2f}",
-                f"{unit}{final_pct.iloc[i, 3]:,.2f}",
+                f"{final_pct.iloc[i, 3]:,.2f}",
             )
 
     for i in range(5):
@@ -359,7 +359,7 @@ def home():
             st.metric(
                 reverse_pct.iloc[i, 0],
                 f"{unit}{reverse_pct.iloc[i, 2]:,.2f}",
-                f"{unit}{reverse_pct.iloc[i, 3]:,.2f}",
+                f"{reverse_pct.iloc[i, 3]:,.2f}",
             )
 
     st.markdown("#### Top 10 Most Volatile Nike Dunk Sneakers")
