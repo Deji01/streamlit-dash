@@ -16,7 +16,7 @@ def home():
     unit = "$"
     st.write(
         "The sneaker retail market is a huge market where people invest in buying sneakers and sell them for a considerable profit. There are various strategies used when operating in such a market. The long-term investment strategy involves buying sneakers and holding unto them for a significant period to make a profit. In consignment, you get stores to sell the sneakers for you for a percentage of your profit. The final strategy called quick flip means you sell the sneakers immediately after you buy them for a slight profit. This is common for people who need quick cash or are new to the market. This dashboard helps track the prices of some of these sneakers to help make informed decisions when investing.")
-    st.markdown("## Sole Supplier")
+    st.subheader("Sole Supplier")
     # -------------- SOLE SUPPLIER --------------
 
     # create database connection
@@ -167,7 +167,7 @@ def home():
         drop=True
     )
 
-    st.markdown("#### Top 5 Sneakers Price Gain & Price Drop")
+    st.subheader("Top 5 Sneakers Price Gain & Price Drop")
 
     col1, col2, col3, col4, col5 = st.columns(5)
     columns = [col1, col2, col3, col4, col5]
@@ -188,7 +188,7 @@ def home():
                 f"{reverse_pct.iloc[i, 3]:,.2f}",
             )
 
-    st.markdown("#### Top 10 Most Volatile Nike Dunk Sneakers")
+    st.subheader("Top 10 Most Volatile Nike Dunk Sneakers")
     st.markdown(
         "$Volatility$ measures how the price of a sneaker varies from its average price over time. Fluctuation in price is a good indicator of sneakers that are relatively unstable. The sneakers with the highest volatility should be avoided to avert risk."
     )
@@ -213,7 +213,7 @@ def home():
         .applymap(style_positive, props="color:green;")
     )
 
-    st.markdown("## Goat")
+    st.subheader("Goat")
     # -------------- GOAT --------------
     # create database connection
     connection, _ = create_connection()
@@ -341,7 +341,7 @@ def home():
         drop=True
     )
 
-    st.markdown("#### Top 5 Sneakers Price Gain & Price Drop")
+    st.subheader("Top 5 Sneakers Price Gain & Price Drop")
 
     col1, col2, col3, col4, col5 = st.columns(5)
     columns = [col1, col2, col3, col4, col5]
@@ -362,7 +362,7 @@ def home():
                 f"{reverse_pct.iloc[i, 3]:,.2f}",
             )
 
-    st.markdown("#### Top 10 Most Volatile Nike Dunk Sneakers")
+    st.subheader("Top 10 Most Volatile Nike Dunk Sneakers")
     st.markdown(
         "$Volatility$ measures how the price of a sneaker varies from its average price over time. Fluctuation in price is a good indicator of sneakers that are relatively unstable. The sneakers with the highest volatility should be avoided to avert risk."
     )
@@ -415,6 +415,7 @@ def search():
                 connection, _ = create_connection()
 
                 if stores == "Sole Supplier":
+                    st.subheader("Sole Supplier")
                     # read in data from database
                     query = f'''
                                 SELECT 
@@ -438,7 +439,8 @@ def search():
                         img = df["image_url"].unique()[0]
                         data = df.sort_values(
                             by="date", ascending=False).copy()
-                        st.markdown(f"![{style_code} {title}]({img})")
+                        # st.markdown(f"![{style_code} {title}]({img})")
+                        st.image(img)
                         frame = data.describe().T
                         frame["initial"] = list(data["price"])[0]
                         frame["current"] = list(data["price"])[-1]
@@ -453,7 +455,7 @@ def search():
                             },
                             inplace=True,
                         )
-                        st.markdown("### Summary Statistics")
+                        st.subheader("Summary Statistics")
                         st.dataframe(
                             frame.style.hide()
                             .applymap(style_negative, props="color:red;")
@@ -482,7 +484,7 @@ def search():
                     else:
                         st.markdown(f"### {style_code} not found in database")
                 elif stores == "Goat":
-                    st.write("Goat")
+                    st.subheader("Goat")
                     # read in data from database
                     query = f'''
                                 SELECT 
@@ -506,7 +508,8 @@ def search():
                         img = df["image_url"].unique()[0]
                         data = df.sort_values(
                             by="date", ascending=False).copy()
-                        st.markdown(f"![{style_code} {title}]({img})")
+                        # st.markdown(f"![{style_code} {title}]({img})")
+                        st.image(img)
                         frame = data.describe().T
                         frame["initial"] = list(data["price"])[0]
                         frame["current"] = list(data["price"])[-1]
@@ -521,7 +524,7 @@ def search():
                             },
                             inplace=True,
                         )
-                        st.markdown("### Summary Statistics")
+                        st.subheader("Summary Statistics")
                         st.dataframe(
                             frame.style.hide()
                             .applymap(style_negative, props="color:red;")
