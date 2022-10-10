@@ -1,5 +1,6 @@
 # streamlit-dash
-Sneakers Dashboard
+
+[Sneakers Dashboard Link](https://deji01-streamlit-dash-app-ayvwan.streamlitapp.com/)
 
 ![sneakers dashboard](img/streamlit-dash.png)
 ## Build Docker Image
@@ -31,4 +32,4 @@ Push Image to Azure container registry
 ```sh
 docker push <Container Name>:latest
 ```
-[Dashboard Link](https://deji01-streamlit-dash-app-ayvwan.streamlitapp.com/)
+
