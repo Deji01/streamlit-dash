@@ -1,6 +1,7 @@
 # streamlit-dash
 
-[Sneakers Dashboard Link](https://deji01-streamlit-dash-app-ayvwan.streamlitapp.com/)
+
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://deji01-streamlit-dash-app-ayvwan.streamlitapp.com/)
 
 ![sneakers dashboard](img/streamlit-dash.png)
 ## Build Docker Image
