@@ -141,6 +141,41 @@ def home():
                 "volatility",
             ]
         ]
+
+    elif "weekly_pct" not in list(final_data.columns):
+        final_data = final_data.drop(
+            columns=list(final_data.columns)[1:-6], axis=1)
+        final_data.rename(
+            columns={list(final_data.columns)[1]: "price"}, inplace=True)
+        final_data = final_data[
+            [
+                "product_title",
+                "style_code",
+                "price",
+                "price_change",
+                "daily_pct",
+                # "weekly_pct",
+                "total_pct",
+                "volatility",
+            ]
+        ]
+    elif ("weekly_pct" & "daily_pct")  not in list(final_data.columns):
+        final_data = final_data.drop(
+            columns=list(final_data.columns)[1:-6], axis=1)
+        final_data.rename(
+            columns={list(final_data.columns)[1]: "price"}, inplace=True)
+        final_data = final_data[
+            [
+                "product_title",
+                "style_code",
+                "price",
+                "price_change",
+                # "daily_pct",
+                # "weekly_pct",
+                "total_pct",
+                "volatility",
+            ]
+        ]
     else:
         final_data = final_data.drop(
             columns=list(final_data.columns)[1:-7], axis=1)
