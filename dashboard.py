@@ -5,7 +5,13 @@ import plotly.express as px
 import streamlit as st
 from config import create_connection
 from datetime import timedelta
+from forex_python.converter import CurrencyRates
 from utils import fillna_mode, style_negative, style_positive
+
+
+c = CurrencyRates()
+
+rate = c.get_rate('GBP', 'USD' )
 
 # pandas max column settings
 pd.set_option("display.max_columns", 50)
@@ -41,6 +47,7 @@ def home():
     sole = sole_supplier.copy()
     sole["date"] = pd.to_datetime(sole["date"])
     sole["date"] = sole["date"].dt.date
+    sole["price"] = sole["price"] * rate
 
     sole_start_date = sole.date.min()
     sole_end_date = sole.date.max()
@@ -159,7 +166,7 @@ def home():
                 "volatility",
             ]
         ]
-    elif ("weekly_pct" & "daily_pct")  not in list(final_data.columns):
+    elif (("weekly_pct")  not in list(final_data.columns)) & (("daily_pct")  not in list(final_data.columns)):
         final_data = final_data.drop(
             columns=list(final_data.columns)[1:-6], axis=1)
         final_data.rename(
@@ -469,7 +476,7 @@ def search():
                     if (df.shape[0]) > 0:
                         df["date"] = pd.to_datetime(df["date"])
                         df["date"] = df["date"].dt.date
-                        df["price"] = df["price"].round(2)
+                        df["price"] = df["price"].round(2) * rate
                         title = df["product_title"].unique()[0]
                         img = df["image_url"].unique()[0]
                         data = df.sort_values(
@@ -507,8 +514,8 @@ def search():
                         )
                         fig.update_layout(
                             title_text=f"{title} Price Change Over Time")
-                        fig.update_layout(
-                            {"plot_bgcolor": "rgba(106, 245, 39, 0.96)"})
+                        # fig.update_layout(
+                        #     {"plot_bgcolor": "rgba(106, 245, 39, 0.96)"})
                         fig.update_traces(
                             line={"color": "Black", "width": 2.5})
                         fig.update_xaxes(
@@ -576,8 +583,8 @@ def search():
                         )
                         fig.update_layout(
                             title_text=f"{title} Price Change Over Time")
-                        fig.update_layout(
-                            {"plot_bgcolor": "rgba(106, 245, 39, 0.96)"})
+                        # fig.update_layout(
+                        #     {"plot_bgcolor": "rgba(106, 245, 39, 0.96)"})
                         fig.update_traces(
                             line={"color": "Black", "width": 2.5})
                         fig.update_xaxes(
