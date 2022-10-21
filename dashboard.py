@@ -22,8 +22,8 @@ def home():
     unit = "$"
     st.write(
         "The sneaker retail market is a huge market where people invest in buying sneakers and sell them for a considerable profit. There are various strategies used when operating in such a market. The long-term investment strategy involves buying sneakers and holding unto them for a significant period to make a profit. In consignment, you get stores to sell the sneakers for you for a percentage of your profit. The final strategy called quick flip means you sell the sneakers immediately after you buy them for a slight profit. This is common for people who need quick cash or are new to the market. This dashboard helps track the prices of some of these sneakers to help make informed decisions when investing.")
-    st.subheader("Sole Supplier")
-    # -------------- SOLE SUPPLIER --------------
+    st.subheader("sole_supplier Supplier")
+    # -------------- sole_supplier SUPPLIER --------------
 
     # create database connection
     connection, _ = create_connection()
@@ -44,49 +44,43 @@ def home():
     connection.close()
 
     # data cleaning & transformation
-    sole = sole_supplier.copy()
-    sole["date"] = pd.to_datetime(sole["date"])
-    sole["date"] = sole["date"].dt.date
-    sole["price"] = sole["price"] * rate
+    sole_supplier["date"] = pd.to_datetime(sole_supplier["date"])
+    sole_supplier["date"] = sole_supplier["date"].dt.date
+    sole_supplier["price"] = sole_supplier["price"] * rate
 
-    sole_start_date = sole.date.min()
-    sole_end_date = sole.date.max()
+    sole_supplier_start_date = sole_supplier.date.min()
+    sole_supplier_end_date = sole_supplier.date.max()
 
     # data analysis
-    sole_df = sole.copy()
-    sole_df = sole_df.sort_values(by=["style_code", "date"])
+    sole_supplier.drop_duplicates(inplace=True)
+    sole_supplier.sort_values(by=["style_code", "date"], inplace=True)
 
-    sole_product_lst = list(
-        set(zip(sole_df["style_code"].values, sole_df["product_title"].values))
+    sole_supplier_product_lst = list(
+        set(zip(sole_supplier["style_code"].values, sole_supplier["product_title"].values))
     )
 
-    sole_df = sole_df.groupby(["style_code", "date"])[
-        "price"].mean().reset_index()
-    sole_df = sole_df.pivot_table("style_code", "date", "style_code")
-    sole_df = sole_df.T
+    sole_supplier_agg = sole_supplier.groupby(["style_code", "date"])["price"].mean().unstack().fillna(method="backfill", axis=1)
 
-    sole_data = fillna_mode(sole_df)
+    num_days = (sole_supplier_end_date - sole_supplier_start_date).days
 
-    num_days = (sole_end_date - sole_start_date).days
-
-    sole_data["volatility"] = sole_data.apply(
+    sole_supplier_agg["volatility"] = sole_supplier_agg.apply(
         lambda x: (x.std()) / ((365 / num_days) ** 0.5), axis=1
     )  # volatility = std / (365/T)**0.5
 
-    sole_data["price_change"] = sole_data.apply(
+    sole_supplier_agg["price_change"] = sole_supplier_agg.apply(
         lambda x: round(
-            ((x[sole_end_date] - x[sole_start_date])),
+            ((x[sole_supplier_end_date] - x[sole_supplier_start_date])),
             2,
         ),
         axis=1,
     )
     try:
-        sole_data["daily_pct"] = sole_data.apply(
+        sole_supplier_agg["daily_pct"] = sole_supplier_agg.apply(
             lambda x: round(
                 (
                     (
-                        (x[sole_end_date] - x[sole_end_date - timedelta(days=1)])
-                        / x[sole_end_date - timedelta(days=1)]
+                        (x[sole_supplier_end_date] - x[sole_supplier_end_date - timedelta(days=1)])
+                        / x[sole_supplier_end_date - timedelta(days=1)]
                     )
                     * 100
                 ),
@@ -98,12 +92,12 @@ def home():
         pass
 
     try:
-        sole_data["weekly_pct"] = sole_data.apply(
+        sole_supplier_agg["weekly_pct"] = sole_supplier_agg.apply(
             lambda x: round(
                 (
                     (
-                        (x[sole_end_date] - x[sole_end_date - timedelta(days=7)])
-                        / x[sole_end_date - timedelta(days=7)]
+                        (x[sole_supplier_end_date] - x[sole_supplier_end_date - timedelta(days=7)])
+                        / x[sole_supplier_end_date - timedelta(days=7)]
                     )
                     * 100
                 ),
@@ -115,28 +109,28 @@ def home():
         pass
 
     try:
-        sole_data["total_pct"] = sole_data.apply(
+        sole_supplier_agg["total_pct"] = sole_supplier_agg.apply(
             lambda x: round(
-                (((x[sole_end_date] - x[sole_start_date]) / x[sole_start_date]) * 100),
+                (((x[sole_supplier_end_date] - x[sole_supplier_start_date]) / x[sole_supplier_start_date]) * 100),
                 2,
             ),
             axis=1,
         )
     except:
         pass
+    sole_supplier_agg = sole_supplier_agg.sort_values(by="volatility", ascending=False).reset_index()
+    sole_supplier_agg.columns.name = ""
+    sole_supplier_agg["volatility"] = sole_supplier_agg.volatility.astype(np.float32).round(2)
+    sole_supplier_agg = sole_supplier_agg.sort_values(by="volatility", ascending=False).reset_index(drop=True)
+    sole_supplier_agg["product_title"] = sole_supplier_agg["style_code"].map(
+        dict(sole_supplier_product_lst))
 
-    final_data = sole_data.sort_values(
-        by="volatility", ascending=False).reset_index()
-    final_data.columns.name = ""
-    final_data["product_title"] = final_data["style_code"].map(
-        dict(sole_product_lst))
-
-    if "daily_pct" not in list(final_data.columns):
-        final_data = final_data.drop(
-            columns=list(final_data.columns)[1:-6], axis=1)
-        final_data.rename(
-            columns={list(final_data.columns)[1]: "price"}, inplace=True)
-        final_data = final_data[
+    if "daily_pct" not in list(sole_supplier_agg.columns):
+        sole_supplier_agg = sole_supplier_agg.drop(
+            columns=list(sole_supplier_agg.columns)[1:-6], axis=1)
+        sole_supplier_agg.rename(
+            columns={list(sole_supplier_agg.columns)[1]: "price"}, inplace=True)
+        sole_supplier_agg = sole_supplier_agg[
             [
                 "product_title",
                 "style_code",
@@ -149,12 +143,12 @@ def home():
             ]
         ]
 
-    elif "weekly_pct" not in list(final_data.columns):
-        final_data = final_data.drop(
-            columns=list(final_data.columns)[1:-6], axis=1)
-        final_data.rename(
-            columns={list(final_data.columns)[1]: "price"}, inplace=True)
-        final_data = final_data[
+    elif "weekly_pct" not in list(sole_supplier_agg.columns):
+        sole_supplier_agg = sole_supplier_agg.drop(
+            columns=list(sole_supplier_agg.columns)[1:-6], axis=1)
+        sole_supplier_agg.rename(
+            columns={list(sole_supplier_agg.columns)[1]: "price"}, inplace=True)
+        sole_supplier_agg = sole_supplier_agg[
             [
                 "product_title",
                 "style_code",
@@ -166,12 +160,12 @@ def home():
                 "volatility",
             ]
         ]
-    elif (("weekly_pct")  not in list(final_data.columns)) & (("daily_pct")  not in list(final_data.columns)):
-        final_data = final_data.drop(
-            columns=list(final_data.columns)[1:-6], axis=1)
-        final_data.rename(
-            columns={list(final_data.columns)[1]: "price"}, inplace=True)
-        final_data = final_data[
+    elif (("weekly_pct")  not in list(sole_supplier_agg.columns)) & (("daily_pct")  not in list(sole_supplier_agg.columns)):
+        sole_supplier_agg = sole_supplier_agg.drop(
+            columns=list(sole_supplier_agg.columns)[1:-6], axis=1)
+        sole_supplier_agg.rename(
+            columns={list(sole_supplier_agg.columns)[1]: "price"}, inplace=True)
+        sole_supplier_agg = sole_supplier_agg[
             [
                 "product_title",
                 "style_code",
@@ -184,11 +178,11 @@ def home():
             ]
         ]
     else:
-        final_data = final_data.drop(
-            columns=list(final_data.columns)[1:-7], axis=1)
-        final_data.rename(
-            columns={list(final_data.columns)[1]: "price"}, inplace=True)
-        final_data = final_data[
+        sole_supplier_agg = sole_supplier_agg.drop(
+            columns=list(sole_supplier_agg.columns)[1:-7], axis=1)
+        sole_supplier_agg.rename(
+            columns={list(sole_supplier_agg.columns)[1]: "price"}, inplace=True)
+        sole_supplier_agg = sole_supplier_agg[
             [
                 "product_title",
                 "style_code",
@@ -201,11 +195,11 @@ def home():
             ]
         ]
 
-    final_pct = final_data.sort_values(by="price_change", ascending=False).reset_index(
+    final_pct = sole_supplier_agg.sort_values(by="price_change", ascending=False).reset_index(
         drop=True
     )
 
-    reverse_pct = final_data.sort_values(by="price_change", ascending=True).reset_index(
+    reverse_pct = sole_supplier_agg.sort_values(by="price_change", ascending=True).reset_index(
         drop=True
     )
 
@@ -236,20 +230,20 @@ def home():
     )
     st.markdown(
         "- `style_code` represents a  unique identifier for each sneaker.")
-    st.markdown(f"- `price` represents the  price on `{sole_end_date}`.")
+    st.markdown(f"- `price` represents the  price on `{sole_supplier_end_date}`.")
     st.markdown(
-        f"- `price_change` represents the  difference in price from `{sole_start_date}` to `{sole_end_date}`."
+        f"- `price_change` represents the  difference in price from `{sole_supplier_start_date}` to `{sole_supplier_end_date}`."
     )
     st.markdown("- `daily_pct` represents the percentage change in price daily.")
     st.markdown(
         "- `weekly_pct` represents the percentage change in price weekly.")
     st.markdown(
-        f"- `total_pct` represents the percentage change in price from `{sole_start_date}` to `{sole_end_date}`."
+        f"- `total_pct` represents the percentage change in price from `{sole_supplier_start_date}` to `{sole_supplier_end_date}`."
     )
     st.markdown("- `volatility` represents the rate of fluctuation in price.")
 
     st.dataframe(
-        final_data.head(10)
+        sole_supplier_agg.head(10)
         .style.hide()
         .applymap(style_negative, props="color:red;")
         .applymap(style_positive, props="color:green;")
@@ -353,16 +347,16 @@ def home():
         axis=1,
     )
 
-    final_data = goat_data.sort_values(
+    sole_supplier_agg = goat_data.sort_values(
         by="volatility", ascending=False).reset_index()
-    final_data.columns.name = ""
-    final_data["product_title"] = final_data["style_code"].map(
+    sole_supplier_agg.columns.name = ""
+    sole_supplier_agg["product_title"] = sole_supplier_agg["style_code"].map(
         dict(goat_product_lst))
-    final_data = final_data.drop(
-        columns=list(final_data.columns)[1:-7], axis=1)
-    final_data.rename(
-        columns={list(final_data.columns)[1]: "price"}, inplace=True)
-    final_data = final_data[
+    sole_supplier_agg = sole_supplier_agg.drop(
+        columns=list(sole_supplier_agg.columns)[1:-7], axis=1)
+    sole_supplier_agg.rename(
+        columns={list(sole_supplier_agg.columns)[1]: "price"}, inplace=True)
+    sole_supplier_agg = sole_supplier_agg[
         [
             "product_title",
             "style_code",
@@ -375,11 +369,11 @@ def home():
         ]
     ]
 
-    final_pct = final_data.sort_values(by="price_change", ascending=False).reset_index(
+    final_pct = sole_supplier_agg.sort_values(by="price_change", ascending=False).reset_index(
         drop=True
     )
 
-    reverse_pct = final_data.sort_values(by="price_change", ascending=True).reset_index(
+    reverse_pct = sole_supplier_agg.sort_values(by="price_change", ascending=True).reset_index(
         drop=True
     )
 
@@ -422,7 +416,7 @@ def home():
     )
     st.markdown("- `volatility` represents the rate of fluctuation in price.")
     st.dataframe(
-        final_data.head(10)
+        sole_supplier_agg.head(10)
         .style.hide()
         .applymap(style_negative, props="color:red;")
         .applymap(style_positive, props="color:green;")
@@ -433,7 +427,7 @@ def search():
     st.write("All original NIke sneakers have tags attached to them with their sizes, barcodes, and model numbers. The model number of the sneaker is usually located under the size and above the barcode. Most times, it is a 6-digit number / alphabet followed by a 3-digit number / alphabet (e.g. DJ0950-113).  You can also find it in the description on retail sites or on the box.")
     with st.form("sneaker_form", clear_on_submit=True):
 
-        stores = ["Sole Supplier", "Goat"]
+        stores = ["sole_supplier Supplier", "Goat"]
         user_input = st.text_input(
             label="Model Number",
             max_chars=30,
@@ -456,8 +450,8 @@ def search():
                 # create database connection
                 connection, _ = create_connection()
 
-                if stores == "Sole Supplier":
-                    st.subheader("Sole Supplier")
+                if stores == "sole_supplier Supplier":
+                    st.subheader("sole_supplier Supplier")
                     # read in data from database
                     query = f'''
                                 SELECT 
