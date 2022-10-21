@@ -64,8 +64,8 @@ def home():
     num_days = (sole_supplier_end_date - sole_supplier_start_date).days
 
     sole_supplier_agg["volatility"] = sole_supplier_agg.apply(
-        lambda x: (x.std()) / ((365 / num_days) ** 0.5), axis=1
-    )  # volatility = std / (365/T)**0.5
+        lambda x: (x.std()) / (num_days ** 0.5), axis=1)
+        # volatility = std / (365/T)**0.5
     sole_supplier_agg["price_change"] = sole_supplier_agg.apply(
         lambda x: round(
             ((x[sole_supplier_end_date] - x[sole_supplier_start_date])),
