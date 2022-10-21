@@ -11,7 +11,7 @@ from utils import fillna_mode, style_negative, style_positive
 
 c = CurrencyRates()
 
-rate = c.get_rate('GBP', 'USD' )
+rate = c.get_rate('GBP', 'USD')
 
 pd.options.display.float_format = "${:,.2f}".format
 
@@ -54,16 +54,18 @@ def home():
     sole_supplier.sort_values(by=["style_code", "date"], inplace=True)
 
     sole_supplier_product_lst = list(
-        set(zip(sole_supplier["style_code"].values, sole_supplier["product_title"].values))
+        set(zip(sole_supplier["style_code"].values,
+            sole_supplier["product_title"].values))
     )
 
-    sole_supplier_agg = sole_supplier.groupby(["style_code", "date"])["price"].mean().unstack().fillna(method="backfill", axis=1)
+    sole_supplier_agg = sole_supplier.groupby(["style_code", "date"])[
+        "price"].mean().unstack().fillna(method="backfill", axis=1)
 
     num_days = (sole_supplier_end_date - sole_supplier_start_date).days
 
     sole_supplier_agg["volatility"] = sole_supplier_agg.apply(
         lambda x: (x.std()) / (num_days ** 0.5), axis=1)
-        # volatility = std / (365/T)**0.5
+    # volatility = std / (365/T)**0.5
     sole_supplier_agg["price_change"] = sole_supplier_agg.apply(
         lambda x: round(
             ((x[sole_supplier_end_date] - x[sole_supplier_start_date])),
@@ -76,7 +78,8 @@ def home():
             lambda x: round(
                 (
                     (
-                        (x[sole_supplier_end_date] - x[sole_supplier_end_date - timedelta(days=1)])
+                        (x[sole_supplier_end_date] -
+                         x[sole_supplier_end_date - timedelta(days=1)])
                         / x[sole_supplier_end_date - timedelta(days=1)]
                     )
                     * 100
@@ -93,7 +96,8 @@ def home():
             lambda x: round(
                 (
                     (
-                        (x[sole_supplier_end_date] - x[sole_supplier_end_date - timedelta(days=7)])
+                        (x[sole_supplier_end_date] -
+                         x[sole_supplier_end_date - timedelta(days=7)])
                         / x[sole_supplier_end_date - timedelta(days=7)]
                     )
                     * 100
@@ -108,18 +112,23 @@ def home():
     try:
         sole_supplier_agg["total_pct"] = sole_supplier_agg.apply(
             lambda x: round(
-                (((x[sole_supplier_end_date] - x[sole_supplier_start_date]) / x[sole_supplier_start_date]) * 100),
+                (((x[sole_supplier_end_date] - x[sole_supplier_start_date]
+                   ) / x[sole_supplier_start_date]) * 100),
                 2,
             ),
             axis=1,
         )
     except:
         pass
-    sole_supplier_agg = sole_supplier_agg.sort_values(by="volatility", ascending=False).reset_index()
+    sole_supplier_agg = sole_supplier_agg.sort_values(
+        by="volatility", ascending=False).reset_index()
     sole_supplier_agg.columns.name = ""
-    sole_supplier_agg["volatility"] = sole_supplier_agg.volatility.astype(np.float32)
-    sole_supplier_agg["volatility"] = round(np.log(sole_supplier_agg["volatility"]),2)
-    sole_supplier_agg = sole_supplier_agg.sort_values(by="volatility", ascending=False).reset_index(drop=True)
+    sole_supplier_agg["volatility"] = sole_supplier_agg.volatility.astype(
+        np.float32)
+    sole_supplier_agg["volatility"] = round(
+        np.log(sole_supplier_agg["volatility"]), 2)
+    sole_supplier_agg = sole_supplier_agg.sort_values(
+        by="volatility", ascending=False).reset_index(drop=True)
     sole_supplier_agg["product_title"] = sole_supplier_agg["style_code"].map(
         dict(sole_supplier_product_lst))
 
@@ -158,7 +167,7 @@ def home():
                 "volatility",
             ]
         ]
-    elif (("weekly_pct")  not in list(sole_supplier_agg.columns)) & (("daily_pct")  not in list(sole_supplier_agg.columns)):
+    elif (("weekly_pct") not in list(sole_supplier_agg.columns)) & (("daily_pct") not in list(sole_supplier_agg.columns)):
         sole_supplier_agg = sole_supplier_agg.drop(
             columns=list(sole_supplier_agg.columns)[1:-6], axis=1)
         sole_supplier_agg.rename(
@@ -228,7 +237,8 @@ def home():
     )
     st.markdown(
         "- `style_code` represents a  unique identifier for each sneaker.")
-    st.markdown(f"- `price` represents the  price on `{sole_supplier_end_date}`.")
+    st.markdown(
+        f"- `price` represents the  price on `{sole_supplier_end_date}`.")
     st.markdown(
         f"- `price_change` represents the  difference in price from `{sole_supplier_start_date}` to `{sole_supplier_end_date}`."
     )
@@ -284,7 +294,8 @@ def home():
     # data analysis
     goat.drop_duplicates(inplace=True)
     goat.sort_values(by=["style_code", "date"], inplace=True)
-    goat_agg = goat.groupby(["style_code", "date"])["price"].mean().unstack().fillna(method="backfill", axis=1)
+    goat_agg = goat.groupby(["style_code", "date"])[
+        "price"].mean().unstack().fillna(method="backfill", axis=1)
 
     goat_product_lst = list(
         set(zip(goat["style_code"].values, goat["product_title"].values))
@@ -293,8 +304,7 @@ def home():
     num_days = (goat_end_date - goat_start_date).days
 
     goat_agg["volatility"] = goat_agg.apply(
-        lambda x: (x.std()) / ((num_days) ** 0.5), axis=1
-    )  # volatility = std / (T)**0.5
+        lambda x: (x.std()) / (num_days ** 0.5), axis=1)  # volatility = std / (T)**0.5
 
     goat_agg["price_change"] = goat_agg.apply(
         lambda x: round(
@@ -338,11 +348,13 @@ def home():
         ),
         axis=1,
     )
-    goat_agg = goat_agg.sort_values(by="volatility", ascending=False).reset_index()
+    goat_agg = goat_agg.sort_values(
+        by="volatility", ascending=False).reset_index()
     goat_agg.columns.name = ""
     goat_agg["volatility"] = goat_agg.volatility.astype(np.float32)
-    goat_agg["volatility"] = round(np.log(goat_agg["volatility"]),2)
-    goat_agg = goat_agg.sort_values(by="volatility", ascending=False).reset_index(drop=True)
+    goat_agg["volatility"] = round(np.log(goat_agg["volatility"]), 2)
+    goat_agg = goat_agg.sort_values(
+        by="volatility", ascending=False).reset_index(drop=True)
     goat_agg["product_title"] = goat_agg["style_code"].map(
         dict(goat_product_lst))
     goat_agg = goat_agg.drop(
