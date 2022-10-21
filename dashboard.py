@@ -279,7 +279,7 @@ def home():
     # filter out only shoe(s) with price(s) greater than 0
     goat = goat_frame.query("retail_price_cents > 0")
     goat.drop_duplicates(inplace=True)
-    
+
     # convert cents to USD
     goat["retail_price_cents"] = goat.retail_price_cents / 100
     goat.rename(columns={"retail_price_cents": "price"}, inplace=True)
@@ -352,7 +352,7 @@ def home():
         by="volatility", ascending=False).reset_index()
     goat_agg.columns.name = ""
     goat_agg["volatility"] = goat_agg.volatility.astype(np.float32)
-    goat_agg["volatility"] = round(np.log(goat_agg["volatility"]), 2)
+    goat_agg["volatility"] = round(np.log1p(goat_agg["volatility"]), 2)
     goat_agg["product_title"] = goat_agg["style_code"].map(
         dict(goat_product_lst))
     goat_agg = goat_agg.drop(
