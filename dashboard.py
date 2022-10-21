@@ -13,7 +13,7 @@ c = CurrencyRates()
 
 rate = c.get_rate('GBP', 'USD' )
 
-pd.options.display.float_format = "${:,.1f}".format
+pd.options.display.float_format = "${:,.3f}".format
 
 
 def home():
