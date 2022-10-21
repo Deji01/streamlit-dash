@@ -126,7 +126,7 @@ def home():
     sole_supplier_agg["volatility"] = sole_supplier_agg.volatility.astype(
         np.float32)
     sole_supplier_agg["volatility"] = round(
-        np.log(sole_supplier_agg["volatility"]), 2)
+        np.log1p(sole_supplier_agg["volatility"]), 2)
     sole_supplier_agg = sole_supplier_agg.sort_values(
         by="volatility", ascending=False).reset_index(drop=True)
     sole_supplier_agg["product_title"] = sole_supplier_agg["style_code"].map(
