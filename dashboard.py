@@ -123,6 +123,7 @@ def home():
     sole_supplier_agg = sole_supplier_agg.sort_values(
         by="volatility", ascending=False).reset_index()
     sole_supplier_agg.columns.name = ""
+    
     sole_supplier_agg["volatility"] = sole_supplier_agg.volatility.astype(
         np.float32)
     sole_supplier_agg["volatility"] = round(
