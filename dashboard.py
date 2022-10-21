@@ -284,27 +284,21 @@ def home():
     goat_end_date = goat.date.max()
 
     # data analysis
-    goat_df = goat.copy()
-    goat_df = goat_df.sort_values(by=["style_code", "date"])
+    goat.drop_duplicates(inplace=True)
+    goat.sort_values(by=["style_code", "date"], inplace=True)
+    goat_agg = goat.groupby(["style_code", "date"])["price"].mean().unstack().fillna(method="backfill", axis=1)
 
     goat_product_lst = list(
-        set(zip(goat_df["style_code"].values, goat_df["product_title"].values))
+        set(zip(goat["style_code"].values, goat["product_title"].values))
     )
-
-    goat_df = goat_df.groupby(["style_code", "date"])[
-        "price"].mean().reset_index()
-    goat_df = goat_df.pivot_table("style_code", "date", "style_code")
-    goat_df = goat_df.T
-
-    goat_data = fillna_mode(goat_df)
 
     num_days = (goat_end_date - goat_start_date).days
 
-    goat_data["volatility"] = goat_data.apply(
-        lambda x: (x.std()) / ((365 / num_days) ** 0.5), axis=1
+    goat_agg["volatility"] = goat_agg.apply(
+        lambda x: (x.std()) / ((num_days) ** 0.5), axis=1
     )  # volatility = std / (T)**0.5
 
-    goat_data["price_change"] = goat_data.apply(
+    goat_agg["price_change"] = goat_agg.apply(
         lambda x: round(
             ((x[goat_end_date] - x[goat_start_date])),
             2,
@@ -312,7 +306,7 @@ def home():
         axis=1,
     )
 
-    goat_data["daily_pct"] = goat_data.apply(
+    goat_agg["daily_pct"] = goat_agg.apply(
         lambda x: round(
             (
                 (
@@ -326,7 +320,7 @@ def home():
         axis=1,
     )
 
-    goat_data["weekly_pct"] = goat_data.apply(
+    goat_agg["weekly_pct"] = goat_agg.apply(
         lambda x: round(
             (
                 (
@@ -340,23 +334,24 @@ def home():
         axis=1,
     )
 
-    goat_data["total_pct"] = goat_data.apply(
+    goat_agg["total_pct"] = goat_agg.apply(
         lambda x: round(
             (((x[goat_end_date] - x[goat_start_date]) / x[goat_start_date]) * 100), 2
         ),
         axis=1,
     )
-
-    sole_supplier_agg = goat_data.sort_values(
-        by="volatility", ascending=False).reset_index()
-    sole_supplier_agg.columns.name = ""
-    sole_supplier_agg["product_title"] = sole_supplier_agg["style_code"].map(
+    goat_agg = goat_agg.sort_values(by="volatility", ascending=False).reset_index()
+    goat_agg.columns.name = ""
+    goat_agg["volatility"] = goat_agg.volatility.astype(np.float32)
+    goat_agg["volatility"] = round(np.log(goat_agg["volatility"]),2)
+    goat_agg = goat_agg.sort_values(by="volatility", ascending=False).reset_index(drop=True)
+    goat_agg["product_title"] = goat_agg["style_code"].map(
         dict(goat_product_lst))
-    sole_supplier_agg = sole_supplier_agg.drop(
-        columns=list(sole_supplier_agg.columns)[1:-7], axis=1)
-    sole_supplier_agg.rename(
-        columns={list(sole_supplier_agg.columns)[1]: "price"}, inplace=True)
-    sole_supplier_agg = sole_supplier_agg[
+    goat_agg = goat_agg.drop(
+        columns=list(goat_agg.columns)[1:-7], axis=1)
+    goat_agg.rename(
+        columns={list(goat_agg.columns)[1]: "price"}, inplace=True)
+    goat_agg = goat_agg[
         [
             "product_title",
             "style_code",
@@ -369,11 +364,11 @@ def home():
         ]
     ]
 
-    final_pct = sole_supplier_agg.sort_values(by="price_change", ascending=False).reset_index(
+    final_pct_2 = goat_agg.sort_values(by="price_change", ascending=False).reset_index(
         drop=True
     )
 
-    reverse_pct = sole_supplier_agg.sort_values(by="price_change", ascending=True).reset_index(
+    reverse_pct_2 = goat_agg.sort_values(by="price_change", ascending=True).reset_index(
         drop=True
     )
 
@@ -385,17 +380,17 @@ def home():
     for i in range(5):
         with columns[i]:
             st.metric(
-                final_pct.iloc[i, 0],
-                f"{unit}{final_pct.iloc[i, 2]:,.2f}",
-                f"{final_pct.iloc[i, 3]:,.2f}",
+                final_pct_2.iloc[i, 0],
+                f"{unit}{final_pct_2.iloc[i, 2]:,.2f}",
+                f"{final_pct_2.iloc[i, 3]:,.2f}",
             )
 
     for i in range(5):
         with columns[i]:
             st.metric(
-                reverse_pct.iloc[i, 0],
-                f"{unit}{reverse_pct.iloc[i, 2]:,.2f}",
-                f"{reverse_pct.iloc[i, 3]:,.2f}",
+                reverse_pct_2.iloc[i, 0],
+                f"{unit}{reverse_pct_2.iloc[i, 2]:,.2f}",
+                f"{reverse_pct_2.iloc[i, 3]:,.2f}",
             )
 
     st.subheader("Top 10 Most Volatile Nike Dunk Sneakers")
@@ -416,7 +411,7 @@ def home():
     )
     st.markdown("- `volatility` represents the rate of fluctuation in price.")
     st.dataframe(
-        sole_supplier_agg.head(10)
+        goat_agg.head(10)
         .style.hide()
         .applymap(style_negative, props="color:red;")
         .applymap(style_positive, props="color:green;")
