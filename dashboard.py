@@ -66,7 +66,6 @@ def home():
     sole_supplier_agg["volatility"] = sole_supplier_agg.apply(
         lambda x: (x.std()) / ((365 / num_days) ** 0.5), axis=1
     )  # volatility = std / (365/T)**0.5
-
     sole_supplier_agg["price_change"] = sole_supplier_agg.apply(
         lambda x: round(
             ((x[sole_supplier_end_date] - x[sole_supplier_start_date])),
@@ -120,7 +119,8 @@ def home():
         pass
     sole_supplier_agg = sole_supplier_agg.sort_values(by="volatility", ascending=False).reset_index()
     sole_supplier_agg.columns.name = ""
-    sole_supplier_agg["volatility"] = sole_supplier_agg.volatility.astype(np.float32).round(2)
+    sole_supplier_agg["volatility"] = sole_supplier_agg.volatility.astype(np.float32)
+    sole_supplier_agg["volatility"] = round(np.log(sole_supplier_agg["volatility"]),2)
     sole_supplier_agg = sole_supplier_agg.sort_values(by="volatility", ascending=False).reset_index(drop=True)
     sole_supplier_agg["product_title"] = sole_supplier_agg["style_code"].map(
         dict(sole_supplier_product_lst))
