@@ -13,9 +13,7 @@ c = CurrencyRates()
 
 rate = c.get_rate('GBP', 'USD' )
 
-# pandas max column settings
-pd.set_option("display.max_columns", 50)
-pd.options.display.float_format = "${:,.2f}".format
+pd.options.display.float_format = "${:,.1f}".format
 
 
 def home():
