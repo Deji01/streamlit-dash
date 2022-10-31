@@ -61,7 +61,7 @@ def home():
     )
 
     sole_supplier_agg = sole_supplier.groupby(["style_code", "date"])[
-        "price"].mean().unstack().fillna(method="backfill", axis=1)
+        "price"].mean().unstack().fillna(method="backfill", axis=1).copy()
 
     num_days = (sole_supplier_end_date - sole_supplier_start_date).days
 
@@ -131,11 +131,29 @@ def home():
     sole_supplier_agg["volatility"] = round(
         np.log1p(sole_supplier_agg["volatility"]), 2)
     sole_supplier_agg = sole_supplier_agg.sort_values(
-        by="volatility", ascending=False).reset_index(drop=True)
+        by="volatility", ascending=False).reset_index(drop=True).copy()
     sole_supplier_agg["product_title"] = sole_supplier_agg["style_code"].map(
         dict(sole_supplier_product_lst))
 
-    if "daily_pct" not in list(sole_supplier_agg.columns):
+    if (("weekly_pct") not in list(sole_supplier_agg.columns)) & (("daily_pct") not in list(sole_supplier_agg.columns)):
+        sole_supplier_agg = sole_supplier_agg.drop(
+            columns=list(sole_supplier_agg.columns)[1:-6], axis=1)
+        sole_supplier_agg.rename(
+            columns={list(sole_supplier_agg.columns)[1]: "price"}, inplace=True)
+        sole_supplier_agg = sole_supplier_agg[
+            [
+                "product_title",
+                "style_code",
+                "price",
+                "price_change",
+                # "daily_pct",
+                # "weekly_pct",
+                "total_pct",
+                "volatility",
+            ]
+        ]
+
+    elif "daily_pct" not in list(sole_supplier_agg.columns):
         sole_supplier_agg = sole_supplier_agg.drop(
             columns=list(sole_supplier_agg.columns)[1:-6], axis=1)
         sole_supplier_agg.rename(
@@ -170,23 +188,7 @@ def home():
                 "volatility",
             ]
         ]
-    elif (("weekly_pct") not in list(sole_supplier_agg.columns)) & (("daily_pct") not in list(sole_supplier_agg.columns)):
-        sole_supplier_agg = sole_supplier_agg.drop(
-            columns=list(sole_supplier_agg.columns)[1:-6], axis=1)
-        sole_supplier_agg.rename(
-            columns={list(sole_supplier_agg.columns)[1]: "price"}, inplace=True)
-        sole_supplier_agg = sole_supplier_agg[
-            [
-                "product_title",
-                "style_code",
-                "price",
-                "price_change",
-                # "daily_pct",
-                # "weekly_pct",
-                "total_pct",
-                "volatility",
-            ]
-        ]
+    
     else:
         sole_supplier_agg = sole_supplier_agg.drop(
             columns=list(sole_supplier_agg.columns)[1:-7], axis=1)
